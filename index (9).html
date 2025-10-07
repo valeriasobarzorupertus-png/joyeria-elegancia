@@ -1,0 +1,464 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joyería Elegancia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5e6f0; /* Tono pastel rosa suave */
+      background-image: url('https://images.unsplash.com/photo-1613376023733-2f0b2b361103?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80'); /* Patrón floral */
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    header {
+      background-color: #3b2f4a; /* Morado oscuro suave */
+      color: white;
+      text-align: center;
+      padding: 2em;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5em;
+    }
+    header p {
+      font-style: italic;
+    }
+    nav {
+      background-color: #4a3c5b; /* Morado más claro */
+      padding: 1em;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+    }
+    nav ul li {
+      margin: 0 1em;
+      position: relative;
+    }
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav ul li a:hover {
+      color: #f4b7c9; /* Rosa pastel para hover */
+    }
+    nav ul li ul {
+      display: none;
+      position: absolute;
+      background-color: #4a3c5b;
+      padding: 1em;
+      top: 100%;
+      left: 0;
+      flex-direction: column;
+      min-width: 150px;
+    }
+    nav ul li:hover ul {
+      display: block;
+    }
+    nav ul li ul li {
+      margin: 0.5em 0;
+    }
+    .cart {
+      position: absolute;
+      right: 1em;
+      top: 1em;
+    }
+    .cart a {
+      color: #f4b7c9; /* Rosa pastel */
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 2em;
+      border-radius: 5px;
+      width: 80%;
+      max-width: 500px;
+      text-align: center;
+    }
+    .modal-content button {
+      margin: 1em;
+      padding: 0.5em 1em;
+      background-color: #4a3c5b;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .modal-content button:hover {
+      background-color: #f4b7c9; /* Rosa pastel para hover */
+    }
+    .modal-content form {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+    }
+    .modal-content input, .modal-content textarea {
+      padding: 0.5em;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+    .modal-content input:focus, .modal-content textarea:focus {
+      outline: none;
+      border-color: #f4b7c9;
+    }
+    .products, .testimonials {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 2em;
+    }
+    .product-card, .testimonial-card {
+      background-color: rgba(255, 255, 255, 0.95); /* Fondo blanco con transparencia */
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin: 1em;
+      padding: 1em;
+      width: 250px;
+      text-align: center;
+    }
+    .product-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+    .product-card button, .testimonial-card button {
+      background-color: #4a3c5b;
+      color: white;
+      border: none;
+      padding: 0.5em 1em;
+      margin-top: 1em;
+      cursor: pointer;
+    }
+    .product-card button:hover, .testimonial-card button:hover {
+      background-color: #f4b7c9; /* Rosa pastel para hover */
+    }
+    footer {
+      background-color: #3b2f4a; /* Morado oscuro suave */
+      color: white;
+      text-align: center;
+      padding: 1em;
+      position: relative;
+      bottom: 0;
+      width: 100%;
+    }
+    footer a {
+      color: #f4b7c9; /* Rosa pastel para enlaces */
+      text-decoration: none;
+      margin: 0 0.5em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Joyería Elegancia</h1>
+    <p>Donde la belleza se encuentra con la artesanía</p>
+    <nav>
+      <ul>
+        <li><a href="#inicio">Inicio</a></li>
+        <li>
+          <a href="#productos">Productos</a>
+          <ul>
+            <li><a href="#mujeres">Mujeres</a></li>
+            <li><a href="#hombres">Hombres</a></li>
+            <li><a href="#ninos">Niños</a></li>
+          </ul>
+        </li>
+        <li><a href="#contacto">Contacto</a></li>
+        <li class="cart"><a href="#cart" onclick="showCart()">Carrito (<span id="cartCount">0</span>)</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div id="cartModal" class="modal">
+    <div class="modal-content">
+      <h2>Tu Carrito</h2>
+      <div id="cartForm" style="display: none;">
+        <h3>Ingresa tus datos</h3>
+        <form id="userInfoForm" onsubmit="addToCart(event)">
+          <input type="text" id="userName" placeholder="Nombre completo" required>
+          <input type="tel" id="userPhone" placeholder="Número de teléfono" required>
+          <textarea id="userAddress" placeholder="Dirección de envío" required></textarea>
+          <input type="hidden" id="productName">
+          <input type="hidden" id="productPrice">
+          <button type="submit">Confirmar y añadir</button>
+          <button type="button" onclick="document.getElementById('cartModal').style.display='none'">Cancelar</button>
+        </form>
+      </div>
+      <div id="cartItems"></div>
+      <p>Total: $<span id="cartTotal">0</span></p>
+      <button onclick="document.getElementById('cartModal').style.display='none'">Cerrar</button>
+      <button onclick="finalizePurchase()">Finalizar Compra</button>
+    </div>
+  </div>
+
+  <section id="productos" class="products">
+    <h2>Nuestras Joyas y Relojes Destacados</h2>
+    <div class="product-card">
+      <img src="anillo_diamante.jpg" alt="Anillo de Diamante Brillante">
+      <h3>Anillo de Diamante Brillante</h3>
+      <p>Un destello eterno de amor: este anillo de oro blanco 18k abraza un diamante de 1.2 quilates, cuya chispa captura corazones y miradas en cada ocasión especial.</p>
+      <p>$1,200</p>
+      <button onclick="openCartForm('Anillo de Diamante Brillante', 1200)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="collar_perlas.jpg" alt="Collar de Perlas Clásico">
+      <h3>Collar de Perlas Clásico</h3>
+      <p>Elegancia atemporal: este collar de perlas naturales de agua dulce, con un delicado cierre de oro rosa, transforma cualquier momento en una obra maestra de sofisticación.</p>
+      <p>$850</p>
+      <button onclick="openCartForm('Collar de Perlas Clásico', 850)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="aretes_oro.jpg" alt="Aretes de Oro Minimalistas">
+      <h3>Aretes de Oro Minimalistas</h3>
+      <p>Sutiles pero impactantes: estos aretes de oro 18k destilan una elegancia discreta, perfectos para brillar desde la mañana hasta la noche con un estilo impecable.</p>
+      <p>$450</p>
+      <button onclick="openCartForm('Aretes de Oro Minimalistas', 450)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_cuarzo.jpg" alt="Reloj de Cuarzo Rosa">
+      <h3>Reloj de Cuarzo Rosa</h3>
+      <p>Un toque de glamour moderno: este reloj de mujer, con esfera de cuarzo rosa y correa de cuero suave, combina precisión y estilo para acompañarte en cada instante inolvidable.</p>
+      <p>$650</p>
+      <button onclick="openCartForm('Reloj de Cuarzo Rosa', 650)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_acero.jpg" alt="Reloj Clásico de Acero">
+      <h3>Reloj Clásico de Acero</h3>
+      <p>Poder y distinción: este reloj de acero inoxidable con esfera negra irradia sofisticación, diseñado para el hombre que marca su propio tiempo con audacia.</p>
+      <p>$900</p>
+      <button onclick="openCartForm('Reloj Clásico de Acero', 900)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="pulsera_zafiros.jpg" alt="Pulsera de Plata con Zafiros">
+      <h3>Pulsera de Plata con Zafiros</h3>
+      <p>Un destello de encanto: esta pulsera de plata esterlina, adornada con zafiros radiantes, envuelve tu muñeca en un halo de elegancia y misterio.</p>
+      <p>$350</p>
+      <button onclick="openCartForm('Pulsera de Plata con Zafiros', 350)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="diadema_cristales.jpg" alt="Diadema de Cristales Brillantes">
+      <h3>Diadema de Cristales Brillantes</h3>
+      <p>Corona de sueños: esta diadema adornada con cristales Swarovski transforma cualquier peinado en un espectáculo real, perfecta para noches de gala inolvidables.</p>
+      <p>$550</p>
+      <button onclick="openCartForm('Diadema de Cristales Brillantes', 550)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="colgante_esmeralda.jpg" alt="Colgante de Esmeralda Mística">
+      <h3>Colgante de Esmeralda Mística</h3>
+      <p>Verde esperanza eterna: este colgante de esmeralda natural en oro amarillo evoca pasión y renovación, un tesoro que late con la fuerza de la naturaleza.</p>
+      <p>$1,500</p>
+      <button onclick="openCartForm('Colgante de Esmeralda Mística', 1500)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="brazalete_oro.jpg" alt="Brazalete de Oro Rosa">
+      <h3>Brazalete de Oro Rosa</h3>
+      <p>Abrazo de calidez: este brazalete de oro rosa 18k con eslabones entrelazados simboliza unión eterna, un lazo que perdura con gracia y fortaleza.</p>
+      <p>$750</p>
+      <button onclick="openCartForm('Brazalete de Oro Rosa', 750)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_diamantes.jpg" alt="Reloj de Lujo con Diamantes">
+      <h3>Reloj de Lujo con Diamantes</h3>
+      <p>Exclusividad suprema: este reloj automático con diamantes incrustados en platino redefine el lujo, donde cada tic-tac susurra historias de opulencia.</p>
+      <p>$2,500</p>
+      <button onclick="openCartForm('Reloj de Lujo con Diamantes', 2500)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_deportivo.jpg" alt="Reloj Deportivo Elegante">
+      <h3>Reloj Deportivo Elegante</h3>
+      <p>Energía imparable: este reloj resistente al agua con esfera táctil combina aventura y refinamiento, ideal para conquistar metas con estilo inquebrantable.</p>
+      <p>$800</p>
+      <button onclick="openCartForm('Reloj Deportivo Elegante', 800)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_vintage.jpg" alt="Reloj Vintage Clásico">
+      <h3>Reloj Vintage Clásico</h3>
+      <p>Nostalgia eterna: este reloj mecánico vintage con esfera marfil revive épocas doradas, un compañero fiel que cuenta historias con cada movimiento delicado.</p>
+      <p>$1,100</p>
+      <button onclick="openCartForm('Reloj Vintage Clásico', 1100)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_perlas.jpg" alt="Reloj de Mujer con Perlas">
+      <h3>Reloj de Mujer con Perlas</h3>
+      <p>Perlas de pureza: este reloj de mujer con perlas naturales en la esfera y correa de seda ofrece una sinfonía de delicadeza, para almas románticas.</p>
+      <p>$950</p>
+      <button onclick="openCartForm('Reloj de Mujer con Perlas', 950)">Añadir al carrito</button>
+    </div>
+    <div class="product-card">
+      <img src="reloj_bolsillo.jpg" alt="Reloj de Bolsillo Dorado">
+      <h3>Reloj de Bolsillo Dorado</h3>
+      <p>Secreto victoriano: este reloj de bolsillo en oro macizo con cadena grabada guarda el paso del tiempo como un tesoro personal, lleno de encanto histórico.</p>
+      <p>$1,300</p>
+      <button onclick="openCartForm('Reloj de Bolsillo Dorado', 1300)">Añadir al carrito</button>
+    </div>
+  </section>
+
+  <section id="testimonios" class="testimonials">
+    <h2>Lo Que Dicen Nuestros Clientes</h2>
+    <div class="testimonial-card">
+      <p>"El anillo de diamante es simplemente espectacular. Lo compré para mi esposa en nuestro aniversario y no para de recibir cumplidos. ¡La calidad es excepcional!"</p>
+      <p><strong>- Ana G., Madrid</strong></p>
+    </div>
+    <div class="testimonial-card">
+      <p>"Adquirí el reloj de cuarzo rosa y estoy encantada. Es elegante y moderno, perfecto para cualquier ocasión. La atención al cliente fue impecable."</p>
+      <p><strong>- Laura M., Barcelona</strong></p>
+    </div>
+    <div class="testimonial-card">
+      <p>"La pulsera de zafiros es mi nueva joya favorita. Es delicada pero con un brillo que no pasa desapercibido. ¡Recomiendo Joyería Elegancia al 100%!"</p>
+      <p><strong>- Carlos R., Valencia</strong></p>
+    </div>
+    <div class="testimonial-card">
+      <p>"El reloj clásico de acero es una obra maestra. Lo compré para mi esposo y le encanta. La entrega fue rápida y el empaque muy elegante."</p>
+      <p><strong>- Sofía L., Sevilla</strong></p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Contáctanos: <a href="mailto:info@joyeriaelegancia.com">info@joyeriaelegancia.com</a></p>
+    <p>Teléfono: +1 (234) 567-890</p>
+    <p>Síguenos en nuestras redes sociales:</p>
+    <p>
+      <a href="#">Instagram</a> |
+      <a href="#">Facebook</a> |
+      <a href="#">Pinterest</a>
+    </p>
+    <p>© 2025 Joyería Elegancia. Todos los derechos reservados.</p>
+  </footer>
+
+  <script>
+    let cart = [];
+    let total = 0;
+
+    function openCartForm(productName, productPrice) {
+      const cartModal = document.getElementById('cartModal');
+      const cartForm = document.getElementById('cartForm');
+      const cartItems = document.getElementById('cartItems');
+      cartItems.style.display = 'none';
+      cartForm.style.display = 'block';
+      document.getElementById('productName').value = productName;
+      document.getElementById('productPrice').value = productPrice;
+      cartModal.style.display = 'flex';
+    }
+
+    function showCart() {
+      const cartModal = document.getElementById('cartModal');
+      const cartForm = document.getElementById('cartForm');
+      const cartItems = document.getElementById('cartItems');
+      cartForm.style.display = 'none';
+      cartItems.style.display = 'block';
+      cartModal.style.display = 'flex';
+    }
+
+    function addToCart(event) {
+      event.preventDefault();
+      const name = document.getElementById('userName').value;
+      const phone = document.getElementById('userPhone').value;
+      const address = document.getElementById('userAddress').value;
+      const productName = document.getElementById('productName').value;
+      const productPrice = parseFloat(document.getElementById('productPrice').value);
+
+      if (name && phone && address) {
+        cart.push({ productName, productPrice, name, phone, address });
+        total += productPrice;
+        updateCart();
+        document.getElementById('cartForm').style.display = 'none';
+        document.getElementById('cartItems').style.display = 'block';
+      } else {
+        alert('Por favor, completa todos los campos.');
+      }
+    }
+
+    function updateCart() {
+      const cartItems = document.getElementById('cartItems');
+      const cartCount = document.getElementById('cartCount');
+      const cartTotal = document.getElementById('cartTotal');
+      cartItems.innerHTML = '';
+      cart.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = `
+          <p><strong>Producto:</strong> ${item.productName}</p>
+          <p><strong>Precio:</strong> $${item.productPrice}</p>
+          <p><strong>Nombre:</strong> ${item.name}</p>
+          <p><strong>Teléfono:</strong> ${item.phone}</p>
+          <p><strong>Dirección:</strong> ${item.address}</p>
+          <hr>
+        `;
+        cartItems.appendChild(itemDiv);
+      });
+      cartCount.textContent = cart.length;
+      cartTotal.textContent = total.toFixed(2);
+    }
+
+    function finalizePurchase() {
+      if (cart.length === 0) {
+        alert('El carrito está vacío.');
+      } else {
+        alert('Compra finalizada. ¡Gracias por tu pedido!');
+        cart = [];
+        total = 0;
+        updateCart();
+        document.getElementById('cartModal').style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
